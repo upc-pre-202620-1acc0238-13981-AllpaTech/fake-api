@@ -7,7 +7,7 @@ const path = require("node:path");
 
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = "0.0.0.0";
-const MAX_BODY_SIZE = 1_000_000;
+const MAX_BODY_SIZE = 20_000_000;
 const seedPath = path.join(__dirname, "data", "seed.json");
 const runtimePath = path.join(__dirname, "data", "runtime.json");
 
