@@ -38,6 +38,99 @@ function send(response, status, payload) {
   response.end(JSON.stringify(payload));
 }
 
+function sendHtml(response, status, html) {
+  response.writeHead(status, {
+    "Content-Type": "text/html; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "no-store"
+  });
+  response.end(html);
+}
+
+function dashboardHtml() {
+  const resources = [
+    { href: "/api/users", label: "users", count: database.users.length },
+    { href: "/api/plots", label: "plots", count: database.plots.length },
+    { href: "/health", label: "health", count: "status" }
+  ];
+  const resourceLinks = resources
+    .map(
+      ({ href, label, count }) =>
+        `<li><a href="${href}">/${label}</a><span>${count}${typeof count === "number" ? "x" : ""}</span></li>`
+    )
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Muyu Fake API</title>
+  <style>
+    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #243248; background: #fff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; }
+    header { border-bottom: 1px solid #e5e7eb; }
+    nav, main { width: min(1100px, calc(100% - 40px)); margin: 0 auto; }
+    nav { min-height: 96px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    nav strong { font-size: 28px; color: #245b25; }
+    nav div { display: flex; gap: 28px; color: #526176; }
+    main { padding: 82px 0; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; background: #ecf7e8; color: #327326; font-weight: 700; }
+    h1 { margin: 26px 0 10px; font-size: clamp(40px, 6vw, 64px); font-weight: 500; letter-spacing: -2px; }
+    .lead { margin: 0; color: #526176; font-size: 20px; }
+    section { margin-top: 62px; }
+    h2 { margin: 0 0 22px; font-size: 34px; font-weight: 500; }
+    ul { margin: 0; padding: 0; list-style: none; width: min(480px, 100%); }
+    li { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #edf0f3; }
+    a { color: #397149; font-size: 19px; text-underline-offset: 4px; }
+    li span { color: #667085; }
+    table { width: 100%; border-collapse: collapse; overflow: hidden; border: 1px solid #e5e7eb; border-radius: 12px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background: #f8faf8; color: #33523a; }
+    code { padding: 3px 7px; border-radius: 6px; background: #f2f4f7; }
+    footer { margin-top: 64px; color: #667085; }
+    @media (max-width: 680px) { nav div { display: none; } main { padding-top: 48px; } table { font-size: 13px; } th, td { padding: 10px 8px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <strong>Muyu Fake API</strong>
+      <div><span>Node.js</span><span>Render</span><span>REST API</span></div>
+    </nav>
+  </header>
+  <main>
+    <span class="eyebrow">● Service running</span>
+    <h1>Congrats!</h1>
+    <p class="lead">You're successfully running the Muyu Fake API.</p>
+
+    <section>
+      <h2>Resources</h2>
+      <ul>${resourceLinks}</ul>
+    </section>
+
+    <section>
+      <h2>Available endpoints</h2>
+      <table>
+        <thead><tr><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>GET</code></td><td><a href="/api/users">/api/users</a></td><td>List registered users</td></tr>
+          <tr><td><code>POST</code></td><td>/api/users/register</td><td>Register a new user</td></tr>
+          <tr><td><code>POST</code></td><td>/api/users/login</td><td>Authenticate a user</td></tr>
+          <tr><td><code>GET</code></td><td><a href="/api/plots">/api/plots</a></td><td>List published plots</td></tr>
+          <tr><td><code>POST</code></td><td>/api/plots</td><td>Create a plot</td></tr>
+          <tr><td><code>PUT</code></td><td>/api/plots/:id</td><td>Update a plot</td></tr>
+          <tr><td><code>POST</code></td><td>/api/plots/:id/fund</td><td>Fund a plot</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <footer>AllpaTech · Muyu demonstration service</footer>
+  </main>
+</body>
+</html>`;
+}
+
 function readJson(request) {
   return new Promise((resolve, reject) => {
     let body = "";
@@ -115,10 +208,27 @@ async function route(request, response) {
 
   if (request.method === "OPTIONS") return send(response, 204, {});
   if (request.method === "GET" && pathname === "/") {
-    return send(response, 200, { name: "Muyu Fake API", status: "running", baseUrl: "/api/" });
+    return sendHtml(response, 200, dashboardHtml());
   }
   if (request.method === "GET" && pathname === "/health") {
     return send(response, 200, { status: "healthy" });
+  }
+
+  if (request.method === "GET" && pathname === "/api") {
+    return send(response, 200, {
+      name: "Muyu Fake API",
+      status: "running",
+      resources: {
+        users: "/api/users",
+        plots: "/api/plots",
+        health: "/health"
+      }
+    });
+  }
+
+  if (request.method === "GET" && pathname === "/api/users") {
+    const users = database.users.map(({ password, ...user }) => user);
+    return send(response, 200, { users: clone(users) });
   }
 
   if (request.method === "POST" && pathname === "/api/users/login") {

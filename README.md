@@ -11,6 +11,8 @@ npm start
 
 La API queda disponible en `http://localhost:3000/api/` y el healthcheck en `http://localhost:3000/health`.
 
+El panel de recursos queda disponible en `http://localhost:3000/`.
+
 ## Credenciales de demostración
 
 | Rol | Correo | Contraseña |
@@ -24,6 +26,8 @@ La API queda disponible en `http://localhost:3000/api/` y el healthcheck en `htt
 | Método | Ruta | Descripción |
 |---|---|---|
 | `GET` | `/health` | Verifica el estado del servicio |
+| `GET` | `/api` | Muestra la información general y los recursos disponibles |
+| `GET` | `/api/users` | Lista los usuarios registrados sin mostrar sus contraseñas |
 | `POST` | `/api/users/login` | Inicia sesión |
 | `POST` | `/api/users/register` | Registra un agricultor |
 | `GET` | `/api/plots` | Lista las parcelas |
